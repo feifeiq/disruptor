@@ -53,7 +53,7 @@ public interface Sequencer extends Cursored, Sequenced
      * Remove the specified sequence from this sequencer.
      *
      * @param sequence to be removed.
-     * @return <tt>true</tt> if this sequence was found, <tt>false</tt> otherwise.
+     * @return <code>true</code> if this sequence was found, <code>false</code> otherwise.
      */
     boolean removeGatingSequence(Sequence sequence);
 
@@ -61,7 +61,7 @@ public interface Sequencer extends Cursored, Sequenced
      * Create a new SequenceBarrier to be used by an EventProcessor to track which messages
      * are available to be read from the ring buffer given a list of sequences to track.
      *
-     * @param sequencesToTrack
+     * @param sequencesToTrack All of the sequences that the newly constructed barrier will wait on.
      * @return A sequence barrier that will track the specified sequences.
      * @see SequenceBarrier
      */

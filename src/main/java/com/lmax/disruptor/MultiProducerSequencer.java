@@ -25,10 +25,10 @@ import com.lmax.disruptor.util.Util;
 /**
  * <p>Coordinator for claiming sequences for access to a data structure while tracking dependent {@link Sequence}s.
  * Suitable for use for sequencing across multiple publisher threads.</p>
- * <p>
- * <p> * <p>Note on {@link Sequencer#getCursor()}:  With this sequencer the cursor value is updated after the call
+ *
+ * <p> * Note on {@link Sequencer#getCursor()}:  With this sequencer the cursor value is updated after the call
  * to {@link Sequencer#next()}, to determine the highest available sequence that can be read, then
- * {@link Sequencer#getHighestPublishedSequence(long, long)} should be used.
+ * {@link Sequencer#getHighestPublishedSequence(long, long)} should be used.</p>
  */
 public final class MultiProducerSequencer extends AbstractSequencer
 {
@@ -111,9 +111,9 @@ public final class MultiProducerSequencer extends AbstractSequencer
     @Override
     public long next(int n)
     {
-        if (n < 1)
+        if (n < 1 || n > bufferSize)
         {
-            throw new IllegalArgumentException("n must be > 0");
+            throw new IllegalArgumentException("n must be > 0 and < bufferSize");
         }
 
         long current;
@@ -133,7 +133,6 @@ public final class MultiProducerSequencer extends AbstractSequencer
 
                 if (wrapPoint > gatingSequence)
                 {
-                    waitStrategy.signalAllWhenBlocking();
                     LockSupport.parkNanos(1); // TODO, should we spin based on the wait strategy?
                     continue;
                 }

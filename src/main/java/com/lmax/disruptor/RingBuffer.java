@@ -50,7 +50,7 @@ abstract class RingBufferFields<E> extends RingBufferPad
         }
         BUFFER_PAD = 128 / scale;
         // Including the buffer pad in the array base offset
-        REF_ARRAY_BASE = UNSAFE.arrayBaseOffset(Object[].class) + (BUFFER_PAD << REF_ELEMENT_SHIFT);
+        REF_ARRAY_BASE = UNSAFE.arrayBaseOffset(Object[].class) + 128;
     }
 
     private final long indexMask;
@@ -122,9 +122,11 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     /**
      * Create a new multiple producer RingBuffer with the specified wait strategy.
      *
+     * @param <E> Class of the event stored in the ring buffer.
      * @param factory      used to create the events within the ring buffer.
      * @param bufferSize   number of elements to create within the ring buffer.
      * @param waitStrategy used to determine how to wait for new elements to become available.
+     * @return a constructed ring buffer.
      * @throws IllegalArgumentException if bufferSize is less than 1 or not a power of 2
      * @see MultiProducerSequencer
      */
@@ -141,9 +143,11 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     /**
      * Create a new multiple producer RingBuffer using the default wait strategy  {@link BlockingWaitStrategy}.
      *
+     * @param <E> Class of the event stored in the ring buffer.
      * @param factory    used to create the events within the ring buffer.
      * @param bufferSize number of elements to create within the ring buffer.
-     * @throws IllegalArgumentException if <tt>bufferSize</tt> is less than 1 or not a power of 2
+     * @return a constructed ring buffer.
+     * @throws IllegalArgumentException if <code>bufferSize</code> is less than 1 or not a power of 2
      * @see MultiProducerSequencer
      */
     public static <E> RingBuffer<E> createMultiProducer(EventFactory<E> factory, int bufferSize)
@@ -154,9 +158,11 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     /**
      * Create a new single producer RingBuffer with the specified wait strategy.
      *
+     * @param <E> Class of the event stored in the ring buffer.
      * @param factory      used to create the events within the ring buffer.
      * @param bufferSize   number of elements to create within the ring buffer.
      * @param waitStrategy used to determine how to wait for new elements to become available.
+     * @return a constructed ring buffer.
      * @throws IllegalArgumentException if bufferSize is less than 1 or not a power of 2
      * @see SingleProducerSequencer
      */
@@ -173,9 +179,11 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     /**
      * Create a new single producer RingBuffer using the default wait strategy  {@link BlockingWaitStrategy}.
      *
+     * @param <E> Class of the event stored in the ring buffer.
      * @param factory    used to create the events within the ring buffer.
      * @param bufferSize number of elements to create within the ring buffer.
-     * @throws IllegalArgumentException if <tt>bufferSize</tt> is less than 1 or not a power of 2
+     * @return a constructed ring buffer.
+     * @throws IllegalArgumentException if <code>bufferSize</code> is less than 1 or not a power of 2
      * @see MultiProducerSequencer
      */
     public static <E> RingBuffer<E> createSingleProducer(EventFactory<E> factory, int bufferSize)
@@ -186,10 +194,12 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     /**
      * Create a new Ring Buffer with the specified producer type (SINGLE or MULTI)
      *
+     * @param <E> Class of the event stored in the ring buffer.
      * @param producerType producer type to use {@link ProducerType}.
      * @param factory      used to create events within the ring buffer.
      * @param bufferSize   number of elements to create within the ring buffer.
      * @param waitStrategy used to determine how to wait for new elements to become available.
+     * @return a constructed ring buffer.
      * @throws IllegalArgumentException if bufferSize is less than 1 or not a power of 2
      */
     public static <E> RingBuffer<E> create(
@@ -211,11 +221,11 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
 
     /**
      * <p>Get the event for a given sequence in the RingBuffer.</p>
-     * <p>
+     *
      * <p>This call has 2 uses.  Firstly use this call when publishing to a ring buffer.
      * After calling {@link RingBuffer#next()} use this call to get hold of the
      * preallocated event to fill with data before calling {@link RingBuffer#publish(long)}.</p>
-     * <p>
+     *
      * <p>Secondly use this call when consuming data from the ring buffer.  After calling
      * {@link SequenceBarrier#waitFor(long)} call this method with any value greater than
      * that your current consumer sequence and less than or equal to the value returned from
@@ -269,7 +279,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
 
     /**
      * <p>Increment and return the next sequence for the ring buffer.  Calls of this
-     * method should ensure that they always publish the sequence afterward.  E.g.
+     * method should ensure that they always publish the sequence afterward.  E.g.</p>
      * <pre>
      * long sequence = ringBuffer.next();
      * try {
@@ -280,7 +290,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * }
      * </pre>
      * <p>This method will not block if there is not space available in the ring
-     * buffer, instead it will throw an {@link InsufficientCapacityException}.
+     * buffer, instead it will throw an {@link InsufficientCapacityException}.</p>
      *
      * @return The next sequence to publish to.
      * @throws InsufficientCapacityException if the necessary space in the ring buffer is not available
@@ -336,11 +346,16 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     }
 
     /**
-     * Determines if a particular entry has been published.
+     * Determines if a particular entry is available.  Note that using this when not within a context that is
+     * maintaining a sequence barrier, it is likely that using this to determine if you can read a value is likely
+     * to result in a race condition and broken code.
      *
      * @param sequence The sequence to identify the entry.
-     * @return If the value has been published or not.
+     * @return If the value can be read or not.
+     * @deprecated Please don't use this method.  It probably won't
+     * do what you think that it does.
      */
+    @Deprecated
     public boolean isPublished(long sequence)
     {
         return sequencer.isAvailable(sequence);
@@ -373,7 +388,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
      * Remove the specified sequence from this ringBuffer.
      *
      * @param sequence to be removed.
-     * @return <tt>true</tt> if this sequence was found, <tt>false</tt> otherwise.
+     * @return <code>true</code> if this sequence was found, <code>false</code> otherwise.
      */
     public boolean removeGatingSequence(Sequence sequence)
     {
@@ -396,7 +411,7 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     /**
      * Creates an event poller for this ring buffer gated on the supplied sequences.
      *
-     * @param gatingSequences
+     * @param gatingSequences to be gated on.
      * @return A poller that will gate on this ring buffer and the supplied sequences.
      */
     public EventPoller<E> newPoller(Sequence... gatingSequences)
@@ -426,14 +441,14 @@ public final class RingBuffer<E> extends RingBufferFields<E> implements Cursored
     }
 
     /**
-     * Given specified <tt>requiredCapacity</tt> determines if that amount of space
-     * is available.  Note, you can not assume that if this method returns <tt>true</tt>
+     * Given specified <code>requiredCapacity</code> determines if that amount of space
+     * is available.  Note, you can not assume that if this method returns <code>true</code>
      * that a call to {@link RingBuffer#next()} will not block.  Especially true if this
      * ring buffer is set up to handle multiple producers.
      *
      * @param requiredCapacity The capacity to check for.
-     * @return <tt>true</tt> If the specified <tt>requiredCapacity</tt> is available
-     * <tt>false</tt> if not.
+     * @return <code>true</code> If the specified <code>requiredCapacity</code> is available
+     * <code>false</code> if not.
      */
     public boolean hasAvailableCapacity(int requiredCapacity)
     {

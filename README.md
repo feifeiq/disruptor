@@ -8,12 +8,41 @@ A High Performance Inter-Thread Messaging Library
 
 [![Build Status](https://semaphoreci.com/api/v1/mikeb01/disruptor/branches/master/badge.svg)](https://semaphoreci.com/mikeb01/disruptor)
 
+## Support
+
+[Google Group](https://groups.google.com/group/lmax-disruptor)
+
 ## Documentation
 
 * [Introduction](https://github.com/LMAX-Exchange/disruptor/wiki/Introduction)
 * [Getting Started](https://github.com/LMAX-Exchange/disruptor/wiki/Getting-Started)
 
 ## Changelog
+
+### 3.4.2
+
+- Fix race condition in BatchEventProcessor with 3 or more starting/halting concurrently.
+
+### 3.4.1
+
+ - Fix race between run() and halt() on BatchEventProcessor.
+
+### 3.4.0
+
+ - Drop support for JDK6, support JDK7 and above only.
+ - Add `ThreadHints.onSpinWait` to all busy spins within Disruptor.
+ - Increase default sleep time for LockSupport.parkNanos to prevent busy spinning.
+
+### 3.3.8
+
+- Revert belt and braces WaitStrategy signalling.
+
+### 3.3.7
+
+- Add batch size to `BatchStartAware.onBatchStart()`
+- Upgrade to newer versions of gradle, checkstyle and JUnit
+- Deprecate classes & methods for later release
+- Remove JMock and rewrite tests accordingly
 
 ### 3.3.6
 
